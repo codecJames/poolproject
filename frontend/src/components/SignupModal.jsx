@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { signup } from '../services/api';
 import '../styles/AuthModal.css';
 
 export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
@@ -42,25 +43,25 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
         return;
       }
 
-      // TODO: Call actual signup API
-      console.log('Signup attempt:', { 
-        fullName: formData.fullName, 
-        email: formData.email 
+      // Call signup API
+      const response = await signup(formData.fullName, formData.email, formData.password);
+      
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(response));
+      
+      alert('Account created successfully! You are now logged in.');
+      setFormData({
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
       });
-
-      // Simulate success
-      setTimeout(() => {
-        alert('Account created successfully!');
-        setFormData({
-          fullName: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-        });
-        onClose();
-      }, 1000);
+      onClose();
+      
+      // Optional: refresh the page or update app state
+      window.location.reload();
     } catch (err) {
-      setError('Signup failed. Please try again.');
+      setError(err.response?.data?.detail || 'Signup failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

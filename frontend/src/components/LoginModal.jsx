@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { login } from '../services/api';
 import '../styles/AuthModal.css';
 
 export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
@@ -12,7 +13,6 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
     setError('');
     setIsLoading(true);
 
-    // Simulate login - replace with actual API call
     try {
       if (!email || !password) {
         setError('Please fill in all fields');
@@ -23,18 +23,21 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
         return;
       }
       
-      // TODO: Call actual login API
-      console.log('Login attempt:', { email, password });
+      // Call login API
+      const response = await login(email, password);
       
-      // Simulate success
-      setTimeout(() => {
-        alert('Login successful!');
-        setEmail('');
-        setPassword('');
-        onClose();
-      }, 1000);
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(response));
+      
+      alert('Login successful!');
+      setEmail('');
+      setPassword('');
+      onClose();
+      
+      // Optional: refresh the page or update app state
+      window.location.reload();
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError(err.response?.data?.detail || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

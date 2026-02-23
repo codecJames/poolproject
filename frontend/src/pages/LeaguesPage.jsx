@@ -1,23 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getTeams, createTeam, recordTeamResult, getLeagues } from '../services/api';
 import '../styles/LeaguesPage.css';
 
-const mockTeams = [
-  { id: 1, name: 'The Breakers', captain: 'John Smith', players: 5, wins: 8, draws: 2, losses: 1, points: 26 },
-  { id: 2, name: 'Pool Sharks', captain: 'Mike Johnson', players: 5, wins: 7, draws: 1, losses: 2, points: 22 },
-  { id: 3, name: 'Cue Masters', captain: 'Sarah Williams', players: 5, wins: 6, draws: 3, losses: 1, points: 21 },
-  { id: 4, name: 'Eight Ball Elite', captain: 'Tom Brown', players: 4, wins: 5, draws: 2, losses: 3, points: 17 },
-  { id: 5, name: 'Chalk & Cue', captain: 'Lisa Davis', players: 5, wins: 3, draws: 1, losses: 6, points: 10 },
-];
-
 export default function LeaguesPage() {
-  const [teams, setTeams] = useState(mockTeams);
+  const [teams, setTeams] = useState([]);
+  const [leagues, setLeagues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [formData, setFormData] = useState({
     teamName: '',
     teamCaptain: '',
     playersList: '',
   });
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [teamsData, leaguesData] = await Promise.all([
+        getTeams(),
+        getLeagues()
+      ]);
+      setTeams(teamsData);
+      setLeagues(leaguesData);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load leagues. Make sure the backend is running.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -27,39 +45,49 @@ export default function LeaguesPage() {
     }));
   };
 
-  const handleRegisterTeam = (e) => {
+  const handleRegisterTeam = async (e) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
 
     if (!formData.teamName.trim() || !formData.teamCaptain.trim() || !formData.playersList.trim()) {
-      setError('Please fill in all fields');
+      setFormError('Please fill in all fields');
       return;
     }
 
     const playerList = formData.playersList.split(',').map(p => p.trim()).filter(p => p);
     
     if (playerList.length < 2) {
-      setError('Please add at least 2 players');
+      setFormError('Please add at least 2 players');
       return;
     }
 
-    const newTeam = {
-      id: teams.length + 1,
-      name: formData.teamName,
-      captain: formData.teamCaptain,
-      players: playerList.length,
-      wins: 0,
-      draws: 0,
-      losses: 0,
-      points: 0,
-    };
-
-    setTeams([...teams, newTeam]);
-    setFormData({ teamName: '', teamCaptain: '', playersList: '' });
-    setShowRegisterForm(false);
+    try {
+      // For now, we'll use a temporary captain ID (1), in a real app this would be the logged-in user
+      // And a default league ID (1), in a real app this would be selected
+      const newTeam = await createTeam(formData.teamName, 1, 1);
+      
+      setTeams([...teams, newTeam]);
+      setFormData({ teamName: '', teamCaptain: '', playersList: '' });
+      setShowRegisterForm(false);
+    } catch (err) {
+      setFormError(err.response?.data?.detail || 'Failed to register team. Please try again.');
+    }
   };
 
   const sortedTeams = [...teams].sort((a, b) => b.points - a.points);
+
+  if (loading) {
+    return <div className="page-container"><p className="loading">Loading leagues...</p></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="page-container">
+        <p className="error">{error}</p>
+        <button onClick={fetchData} className="retry-btn">Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -83,7 +111,7 @@ export default function LeaguesPage() {
 
           {showRegisterForm && (
             <form onSubmit={handleRegisterTeam} className="register-form">
-              {error && <div className="error-message">{error}</div>}
+              {formError && <div className="error-message">{formError}</div>}
               
               <div className="form-group">
                 <label htmlFor="teamName">Team Name</label>
@@ -133,42 +161,54 @@ export default function LeaguesPage() {
             <span className="team-count">{sortedTeams.length} teams</span>
           </div>
 
-          <div className="table-wrapper">
-            <table className="league-table">
-              <thead>
-                <tr>
-                  <th>Position</th>
-                  <th>Team Name</th>
-                  <th>Captain</th>
-                  <th>Players</th>
-                  <th>Wins</th>
-                  <th>Draws</th>
-                  <th>Losses</th>
-                  <th className="points-col">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedTeams.map((team, index) => (
-                  <tr key={team.id} className={`rank-${index + 1}`}>
-                    <td className="position">
-                      <span className="medal">
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                      </span>
-                    </td>
-                    <td className="team-name">{team.name}</td>
-                    <td className="captain">{team.captain}</td>
-                    <td className="players">{team.players}</td>
-                    <td className="wins">{team.wins}</td>
-                    <td className="draws">{team.draws}</td>
-                    <td className="losses">{team.losses}</td>
-                    <td className="points">
-                      <span className="points-badge">{team.points}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {sortedTeams.length === 0 ? (
+            <div className="content-card">
+              <div className="empty-state">
+                <p className="empty-icon">🎱</p>
+                <h2>No teams registered</h2>
+                <p>Register a team to get started!</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="table-wrapper">
+                <table className="league-table">
+                  <thead>
+                    <tr>
+                      <th>Position</th>
+                      <th>Team Name</th>
+                      <th>Captain</th>
+                      <th>Players</th>
+                      <th>Wins</th>
+                      <th>Draws</th>
+                      <th>Losses</th>
+                      <th className="points-col">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedTeams.map((team, index) => (
+                      <tr key={team.id} className={`rank-${index + 1}`}>
+                        <td className="position">
+                          <span className="medal">
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          </span>
+                        </td>
+                        <td className="team-name">{team.name}</td>
+                        <td className="captain">Captain</td>
+                        <td className="players">{team.members?.length || 0}</td>
+                        <td className="wins">{team.wins}</td>
+                        <td className="draws">{team.draws}</td>
+                        <td className="losses">{team.losses}</td>
+                        <td className="points">
+                          <span className="points-badge">{team.points}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           <div className="scoring-info">
             <h3>Scoring System</h3>
