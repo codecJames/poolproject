@@ -54,6 +54,14 @@ export default function Navigation() {
               💰 Money Match
             </Link>
           </li>
+          <li className="nav-item">
+            <Link
+              to="/shop"
+              className={`nav-link ${isActive('/shop') ? 'active' : ''}`}
+            >
+              🛍️ Shop
+            </Link>
+          </li>
         </ul>
       </div>
     </nav>

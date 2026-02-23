@@ -151,3 +151,50 @@ class MoneyMatchCreate(MatchBase):
 
 class MoneyMatch(Match):
     pass
+
+# Challenge schemas
+class ChallengeBase(BaseModel):
+    challenger_id: int
+    challenged_id: int
+    challenge_amount: float
+
+class ChallengeCreate(ChallengeBase):
+    pass
+
+class Challenge(ChallengeBase):
+    id: int
+    status: str  # pending, accepted, declined, completed
+    created_at: datetime
+    accepted_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+class ChallengeWithPlayers(Challenge):
+    challenger_name: str
+    challenged_name: str
+
+# Challenge Result schemas
+class ChallengeResultBase(BaseModel):
+    challenge_id: int
+    challenger_score: int = 0
+    challenged_score: int = 0
+
+class ChallengeResultCreate(ChallengeResultBase):
+    pass
+
+class ChallengeResultUpdate(BaseModel):
+    challenger_score: Optional[int] = None
+    challenged_score: Optional[int] = None
+    player_id: int  # ID of player confirming the result
+
+class ChallengeResult(ChallengeResultBase):
+    id: int
+    challenger_confirmed: bool
+    challenged_confirmed: bool
+    match_id: Optional[int]
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True

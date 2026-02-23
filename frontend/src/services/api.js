@@ -242,4 +242,95 @@ export const getMoneyMatchLeaderboard = async () => {
   }
 };
 
+// Challenge endpoints
+export const createChallenge = async (challengerId, challengedId, challengeAmount) => {
+  try {
+    const response = await apiClient.post('/challenges', {
+      challenger_id: challengerId,
+      challenged_id: challengedId,
+      challenge_amount: challengeAmount,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating challenge:', error);
+    throw error;
+  }
+};
+
+export const getChallenges = async (status = null) => {
+  try {
+    const params = status ? { status } : {};
+    const response = await apiClient.get('/challenges', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching challenges:', error);
+    throw error;
+  }
+};
+
+export const getChallengesForPlayer = async (playerId, status = null) => {
+  try {
+    const params = status ? { status } : {};
+    const response = await apiClient.get(`/challenges/for/${playerId}`, { params });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching challenges for player ${playerId}:`, error);
+    throw error;
+  }
+};
+
+export const getChallenge = async (challengeId) => {
+  try {
+    const response = await apiClient.get(`/challenges/${challengeId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching challenge ${challengeId}:`, error);
+    throw error;
+  }
+};
+
+export const acceptChallenge = async (challengeId) => {
+  try {
+    const response = await apiClient.put(`/challenges/${challengeId}/accept`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error accepting challenge ${challengeId}:`, error);
+    throw error;
+  }
+};
+
+export const declineChallenge = async (challengeId) => {
+  try {
+    const response = await apiClient.put(`/challenges/${challengeId}/decline`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error declining challenge ${challengeId}:`, error);
+    throw error;
+  }
+};
+
+export const submitChallengeResult = async (challengeId, challengerScore, challengedScore, playerId) => {
+  try {
+    const response = await apiClient.post(`/challenges/${challengeId}/result`, {
+      challenger_score: challengerScore,
+      challenged_score: challengedScore,
+      player_id: playerId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error submitting challenge result for ${challengeId}:`, error);
+    throw error;
+  }
+};
+
+export const getChallengeResult = async (challengeId) => {
+  try {
+    const response = await apiClient.get(`/challenges/${challengeId}/result`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching challenge result for ${challengeId}:`, error);
+    throw error;
+  }
+};
+
 export default apiClient;

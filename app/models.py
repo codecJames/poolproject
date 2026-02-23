@@ -126,3 +126,37 @@ class Match(Base):
     tournament = relationship("Tournament", back_populates="matches")
     player1 = relationship("Player", foreign_keys=[player_1_id], back_populates="matches_as_player1")
     player2 = relationship("Player", foreign_keys=[player_2_id], back_populates="matches_as_player2")
+
+
+class Challenge(Base):
+    __tablename__ = "challenges"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    challenger_id = Column(Integer, ForeignKey("players.id"), nullable=False)
+    challenged_id = Column(Integer, ForeignKey("players.id"), nullable=False)
+    challenge_amount = Column(Float, nullable=False)
+    status = Column(String, default="pending")  # pending, accepted, declined, completed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    challenger = relationship("Player", foreign_keys=[challenger_id])
+    challenged = relationship("Player", foreign_keys=[challenged_id])
+
+
+class ChallengeResult(Base):
+    __tablename__ = "challenge_results"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    challenge_id = Column(Integer, ForeignKey("challenges.id"), nullable=False)
+    challenger_score = Column(Integer, default=0)
+    challenged_score = Column(Integer, default=0)
+    challenger_confirmed = Column(Boolean, default=False)
+    challenged_confirmed = Column(Boolean, default=False)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    challenge = relationship("Challenge")
+    match = relationship("Match")

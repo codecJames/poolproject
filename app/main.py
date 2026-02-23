@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routes import players, tournaments, matches, users, clubs, leagues, teams, money_matches
+from app.routes import players, tournaments, matches, users, clubs, leagues, teams, money_matches, challenges
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -38,6 +38,7 @@ app.include_router(players.router)
 app.include_router(tournaments.router)
 app.include_router(matches.router)
 app.include_router(money_matches.router)
+app.include_router(challenges.router)
 
 @app.get("/")
 def root():

@@ -7,6 +7,7 @@ import ClubsPage from './pages/ClubsPage'
 import TournamentsPage from './pages/TournamentsPage'
 import LeaguesPage from './pages/LeaguesPage'
 import MoneyMatchPage from './pages/MoneyMatchPage'
+import ShopPage from './pages/ShopPage'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/tournaments" element={<TournamentsPage />} />
           <Route path="/leagues" element={<LeaguesPage />} />
           <Route path="/money-match" element={<MoneyMatchPage />} />
+          <Route path="/shop" element={<ShopPage />} />
         </Routes>
       </main>
     </div>
