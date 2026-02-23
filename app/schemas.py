@@ -1,6 +1,91 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+
+# User schemas
+class UserBase(BaseModel):
+    full_name: str
+    email: str
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Club schemas
+class ClubBase(BaseModel):
+    name: str
+    location: str = "UCT"
+    description: str = ""
+
+class ClubCreate(ClubBase):
+    pass
+
+class Club(ClubBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# League schemas
+class LeagueBase(BaseModel):
+    name: str
+    season: str
+    club_id: int
+
+class LeagueCreate(LeagueBase):
+    pass
+
+class League(LeagueBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# TeamMember schemas
+class TeamMemberBase(BaseModel):
+    user_id: int
+
+class TeamMemberCreate(TeamMemberBase):
+    pass
+
+class TeamMember(TeamMemberBase):
+    id: int
+    team_id: int
+    joined_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Team schemas
+class TeamBase(BaseModel):
+    name: str
+    captain_id: int
+    league_id: int
+
+class TeamCreate(TeamBase):
+    pass
+
+class Team(TeamBase):
+    id: int
+    wins: int
+    draws: int
+    losses: int
+    points: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class TeamWithMembers(Team):
+    members: List[TeamMember] = []
 
 # Player schemas
 class PlayerBase(BaseModel):
@@ -57,3 +142,12 @@ class Match(MatchBase):
     
     class Config:
         from_attributes = True
+
+# Money Match schemas (same as Match but with money focus)
+class MoneyMatchCreate(MatchBase):
+    player_1_score: int
+    player_2_score: int
+    money_wagered: float
+
+class MoneyMatch(Match):
+    pass

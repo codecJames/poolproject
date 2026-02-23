@@ -1,0 +1,392 @@
+.leagues-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* Register Team Section */
+.register-team-section {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.section-header h2 {
+  font-size: 1.6rem;
+  color: #646cff;
+  margin: 0;
+  flex: 1;
+}
+
+.team-count {
+  background-color: rgba(100, 108, 255, 0.2);
+  color: #646cff;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.toggle-btn {
+  padding: 0.7rem 1.3rem;
+  border: 2px solid #646cff;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #646cff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.toggle-btn:hover {
+  background-color: rgba(100, 108, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border-left: 4px solid #646cff;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 2px solid #404040;
+  border-radius: 6px;
+  background-color: #1a1a1a;
+  color: #fff;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.btn-submit {
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(100, 108, 255, 0.3);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.error-message {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 4px solid #ff6b6b;
+  font-size: 0.95rem;
+}
+
+/* League Table Section */
+.league-table-section {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.league-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #1a1a1a;
+}
+
+.league-table thead {
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  color: white;
+}
+
+.league-table thead th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.league-table tbody tr {
+  border-bottom: 1px solid #333;
+  transition: background-color 0.2s;
+}
+
+.league-table tbody tr:hover {
+  background-color: #262626;
+}
+
+.league-table tbody tr.rank-1 {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, transparent 100%);
+}
+
+.league-table tbody tr.rank-2 {
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.1) 0%, transparent 100%);
+}
+
+.league-table tbody tr.rank-3 {
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.1) 0%, transparent 100%);
+}
+
+.league-table tbody td {
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 0.95rem;
+}
+
+.position {
+  font-weight: 700;
+  width: 80px;
+}
+
+.medal {
+  font-size: 1.2rem;
+}
+
+.team-name {
+  font-weight: 600;
+  color: #fff;
+  min-width: 150px;
+}
+
+.captain {
+  color: #aaa;
+}
+
+.players,
+.wins,
+.draws,
+.losses {
+  text-align: center;
+  color: #bbb;
+}
+
+.points-col {
+  text-align: center;
+}
+
+.points {
+  text-align: center;
+}
+
+.points-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  min-width: 45px;
+}
+
+/* Scoring Info */
+.scoring-info {
+  background-color: rgba(100, 108, 255, 0.1);
+  border: 2px solid #646cff;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.scoring-info h3 {
+  margin: 0 0 1rem 0;
+  color: #646cff;
+  font-size: 1.2rem;
+}
+
+.scoring-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.score-icon {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #646cff;
+  min-width: 45px;
+  text-align: center;
+}
+
+.score-item div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.score-label {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.score-value {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+
+  .register-team-section,
+  .league-table-section {
+    padding: 1.5rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toggle-btn {
+    width: 100%;
+  }
+
+  .league-table thead th,
+  .league-table tbody td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .league-table {
+    font-size: 0.9rem;
+  }
+
+  .points-badge {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.95rem;
+  }
+
+  .scoring-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .leagues-container {
+    gap: 1.5rem;
+  }
+
+  .register-team-section,
+  .league-table-section {
+    padding: 1rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .register-form {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .league-table thead,
+  .league-table tbody,
+  .league-table th,
+  .league-table td,
+  .league-table tr {
+    display: block;
+  }
+
+  .league-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .league-table tbody tr {
+    border: 1px solid #333;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    padding: 0.5rem;
+  }
+
+  .league-table tbody td {
+    padding: 0.5rem;
+    position: relative;
+    padding-left: 120px;
+  }
+
+  .league-table tbody td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    font-weight: 600;
+    color: #646cff;
+    width: 110px;
+    font-size: 0.8rem;
+  }
+
+  .scoring-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .score-item {
+    gap: 0.75rem;
+  }
+}
