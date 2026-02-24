@@ -1,0 +1,5 @@
+.modal-small { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:2100 }
+.modal-small-content { background: #111; color: #fff; padding:1rem; border-radius:8px; width:420px }
+.score-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:0.75rem }
+.score-row input { width:80px; padding:0.4rem }
+.actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem }

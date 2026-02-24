@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   getMoneyMatches,
   getMoneyMatchLeaderboard,
@@ -10,9 +10,15 @@ import {
   submitChallengeResult,
   getChallengeResult,
 } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
+import PaymentModal from '../components/PaymentModal';
 import '../styles/PageContent.css';
 
 export default function MoneyMatchPage() {
+  const { user, userId } = useAuth();
+  const { addNotification } = useNotification();
+  
   const [matches, setMatches] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [players, setPlayers] = useState([]);
@@ -28,19 +34,69 @@ export default function MoneyMatchPage() {
   const [activeChallenge, setActiveChallenge] = useState(null);
   const [resultScores, setResultScores] = useState({ challenger: 0, challenged: 0 });
   const [confirmingResults, setConfirmingResults] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
+    if (!userId) {
+      setError('Please log in to view money matches');
+      setLoading(false);
+      return;
+    }
     fetchAllData();
-  }, []);
+    startPollingForChallenges();
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [userId]);
+
+  const startPollingForChallenges = () => {
+    // Poll for new incoming challenges every 5 seconds
+    pollIntervalRef.current = setInterval(() => {
+      if (userId) {
+        checkForNewChallenges();
+      }
+    }, 5000);
+  };
+
+  const checkForNewChallenges = async () => {
+    try {
+      const challengesData = await getChallengesForPlayer(userId);
+      const incomingPending = challengesData.filter(
+        c => c.status === 'pending' && c.challenged_id === userId
+      );
+      
+      // Count new incoming challenges
+      const newCount = incomingPending.length;
+      if (newCount > notificationCount) {
+        const diff = newCount - notificationCount;
+        addNotification({
+          type: 'info',
+          title: '⚡ New Challenge!',
+          message: `You received ${diff} challenge${diff > 1 ? 's' : ''}!`,
+          duration: 4000,
+        });
+      }
+      setNotificationCount(newCount);
+    } catch (err) {
+      console.error('Error checking for new challenges:', err);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
+      if (!userId) return;
+
       const [matchesData, leaderboardData, playersData, challengesData] = await Promise.all([
         getMoneyMatches(),
         getMoneyMatchLeaderboard(),
         getPlayers(),
-        getChallengesForPlayer(1), // TODO: Replace 1 with actual logged-in player ID
+        getChallengesForPlayer(userId),
       ]);
       setMatches(matchesData);
       setLeaderboard(leaderboardData);
@@ -56,6 +112,15 @@ export default function MoneyMatchPage() {
   };
 
   const handleChallengeClick = (opponent) => {
+    if (!userId) {
+      addNotification({
+        type: 'error',
+        title: 'Please Log In',
+        message: 'You must be logged in to challenge other players',
+        duration: 3000,
+      });
+      return;
+    }
     setSelectedOpponent(opponent);
     setShowChallengeForm(true);
     setChallengeStage('challenge');
@@ -69,14 +134,44 @@ export default function MoneyMatchPage() {
     }
 
     try {
-      // TODO: Replace 1 with actual logged-in player ID
-      const newChallenge = await createChallenge(1, selectedOpponent.id, parseFloat(challengeAmount));
+      const newChallenge = await createChallenge(userId, selectedOpponent.id, parseFloat(challengeAmount));
       setActiveChallenge(newChallenge);
-      setChallengeStage('payment');
+      setShowPaymentModal(true);
       setChallengeAmount('');
+      
+      addNotification({
+        type: 'info',
+        title: 'Challenge Created',
+        message: `Challenge to ${selectedOpponent.name} for R${parseFloat(challengeAmount).toFixed(2)} created`,
+        duration: 3000,
+      });
     } catch (err) {
-      setFormError(err.response?.data?.detail || 'Failed to create challenge');
+      const errorMsg = err.response?.data?.detail || 'Failed to create challenge';
+      setFormError(errorMsg);
+      addNotification({
+        type: 'error',
+        title: 'Challenge Failed',
+        message: errorMsg,
+        duration: 3000,
+      });
     }
+  };
+
+  const handlePaymentSuccess = async () => {
+    setShowPaymentModal(false);
+    setChallengeStage('list');
+    setActiveChallenge(null);
+    setShowChallengeForm(false);
+    setSelectedOpponent(null);
+
+    addNotification({
+      type: 'success',
+      title: 'Payment Successful',
+      message: 'Your challenge is now active and waiting for acceptance',
+      duration: 3000,
+    });
+
+    await fetchAllData();
   };
 
   const handleAcceptChallenge = async (challenge) => {
@@ -84,18 +179,46 @@ export default function MoneyMatchPage() {
       await acceptChallenge(challenge.id);
       setActiveChallenge(challenge);
       setChallengeStage('results');
+
+      addNotification({
+        type: 'success',
+        title: 'Challenge Accepted',
+        message: `Ready to play against ${challenge.challenger_name}!`,
+        duration: 3000,
+      });
+
       await fetchAllData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to accept challenge');
+      const errorMsg = err.response?.data?.detail || 'Failed to accept challenge';
+      addNotification({
+        type: 'error',
+        title: 'Accept Failed',
+        message: errorMsg,
+        duration: 3000,
+      });
     }
   };
 
   const handleDeclineChallenge = async (challenge) => {
     try {
       await declineChallenge(challenge.id);
+
+      addNotification({
+        type: 'info',
+        title: 'Challenge Declined',
+        message: `You declined the challenge from ${challenge.challenger_name}`,
+        duration: 3000,
+      });
+
       await fetchAllData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to decline challenge');
+      const errorMsg = err.response?.data?.detail || 'Failed to decline challenge';
+      addNotification({
+        type: 'error',
+        title: 'Decline Failed',
+        message: errorMsg,
+        duration: 3000,
+      });
     }
   };
 
@@ -109,9 +232,23 @@ export default function MoneyMatchPage() {
       );
       setConfirmingResults(result);
       setResultScores({ challenger: 0, challenged: 0 });
+
+      addNotification({
+        type: 'success',
+        title: 'Results Submitted',
+        message: 'Waiting for opponent to confirm the results...',
+        duration: 3000,
+      });
+
       await fetchAllData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to submit results');
+      const errorMsg = err.response?.data?.detail || 'Failed to submit results';
+      addNotification({
+        type: 'error',
+        title: 'Submit Failed',
+        message: errorMsg,
+        duration: 3000,
+      });
     }
   };
 
@@ -510,57 +647,18 @@ export default function MoneyMatchPage() {
         </div>
       )}
 
-      {activeChallenge && challengeStage === 'payment' && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div className="content-card" style={{ width: '90%', maxWidth: '500px', padding: '2rem' }}>
-            <h2 style={{ marginTop: 0 }}>💳 Process Payment</h2>
-            <div style={{
-              background: 'rgba(100, 108, 255, 0.1)',
-              padding: '1.5rem',
-              borderRadius: '6px',
-              marginBottom: '1.5rem'
-            }}>
-              <p style={{ margin: '0 0 1rem 0', color: '#aaa' }}>Challenge to: <span style={{ color: '#646cff', fontWeight: '600' }}>{selectedOpponent.name}</span></p>
-              <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: '#FFD700' }}>
-                R{activeChallenge.challenge_amount.toFixed(2)}
-              </p>
-            </div>
-            <p style={{ color: '#aaa', marginBottom: '1.5rem' }}>
-              Payment integration coming soon. For now, this challenge is ready to be played!
-            </p>
-            <button
-              onClick={() => {
-                setChallengeStage('list');
-                setActiveChallenge(null);
-                setShowChallengeForm(false);
-              }}
-              style={{
-                width: '100%',
-                padding: '0.9rem',
-                background: 'linear-gradient(135deg, #646cff 0%, #535bf2 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '1rem'
-              }}
-            >
-              Continue to Match
-            </button>
-          </div>
-        </div>
+      {showPaymentModal && activeChallenge && selectedOpponent && (
+        <PaymentModal
+          amount={activeChallenge.challenge_amount}
+          playerName={selectedOpponent.name}
+          onSuccess={handlePaymentSuccess}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setChallengeStage('list');
+            setActiveChallenge(null);
+            setShowChallengeForm(false);
+          }}
+        />
       )}
 
       {activeChallenge && challengeStage === 'results' && (
@@ -676,7 +774,7 @@ export default function MoneyMatchPage() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleSubmitResult(activeChallenge, 1)} // TODO: Replace 1 with actual player ID
+                    onClick={() => handleSubmitResult(activeChallenge, userId)}
                     style={{
                       flex: 1,
                       padding: '0.8rem',

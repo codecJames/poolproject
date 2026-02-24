@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
-import { getTournaments, createTournament } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
+import { getTournaments, createTournament, registerForTournament, unregisterFromTournament, getTournament, startTournament } from '../services/api';
 import '../styles/PageContent.css';
 
 export default function TournamentsPage() {
+  const { user, userId, isAuthenticated } = useAuth();
+  const { addNotification } = useNotification();
+
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,6 +17,10 @@ export default function TournamentsPage() {
     startDate: '',
     location: 'UCT',
     entryFee: '0',
+    rules: '',
+    isPublic: true,
+    maxPlayers: 32,
+    prizePool: 0,
   });
   const [formError, setFormError] = useState('');
 
@@ -22,8 +31,8 @@ export default function TournamentsPage() {
   const fetchTournaments = async () => {
     try {
       setLoading(true);
-      const data = await getTournaments();
-      setTournaments(data);
+      const data = await getTournaments(true, null);
+      setTournaments(data || []);
       setError(null);
     } catch (err) {
       setError('Failed to load tournaments. Make sure the backend is running.');
@@ -34,10 +43,10 @@ export default function TournamentsPage() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -45,24 +54,70 @@ export default function TournamentsPage() {
     e.preventDefault();
     setFormError('');
 
+    if (!isAuthenticated || !userId) {
+      setFormError('You must be logged in to create a tournament');
+      return;
+    }
+
     if (!formData.name.trim() || !formData.startDate) {
       setFormError('Tournament name and start date are required');
       return;
     }
 
     try {
-      const newTournament = await createTournament(
-        formData.name,
-        new Date(formData.startDate).toISOString(),
-        formData.location,
-        parseFloat(formData.entryFee)
-      );
-      
-      setTournaments([...tournaments, newTournament]);
-      setFormData({ name: '', startDate: '', location: 'UCT', entryFee: '0' });
+      const tournamentPayload = {
+        name: formData.name,
+        rules: formData.rules,
+        is_public: !!formData.isPublic,
+        max_players: parseInt(formData.maxPlayers || formData.maxPlayers === 0 ? formData.maxPlayers : formData.maxPlayers) || parseInt(formData.maxPlayers) || 32,
+        start_date: new Date(formData.startDate).toISOString(),
+        prize_pool: parseFloat(formData.prizePool) || 0.0,
+      };
+
+      const newTournament = await createTournament(tournamentPayload, userId);
+
+      addNotification({ type: 'success', title: 'Tournament Created', message: `${newTournament.name} created successfully` });
+
+      setTournaments(prev => [...prev, newTournament]);
+      setFormData({ name: '', startDate: '', location: 'UCT', entryFee: '0', rules: '', isPublic: true, maxPlayers: 32, prizePool: 0 });
       setShowForm(false);
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Failed to create tournament. Please try again.');
+    }
+  };
+
+  const handleRegisterTournament = async (tournamentId) => {
+    if (!isAuthenticated || !userId) {
+      addNotification({ type: 'error', title: 'Please log in', message: 'You must log in to register for a tournament' });
+      return;
+    }
+
+    try {
+      await registerForTournament(tournamentId, userId);
+      addNotification({ type: 'success', title: 'Registered', message: 'Successfully registered for the tournament' });
+      fetchTournaments();
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Registration Failed', message: err.response?.data?.detail || 'Could not register' });
+    }
+  };
+
+  const handleUnregisterTournament = async (tournamentId) => {
+    try {
+      await unregisterFromTournament(tournamentId, userId);
+      addNotification({ type: 'success', title: 'Unregistered', message: 'You have been unregistered' });
+      fetchTournaments();
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Unregister Failed', message: err.response?.data?.detail || 'Could not unregister' });
+    }
+  };
+
+  const handleStartTournament = async (tournamentId) => {
+    try {
+      await startTournament(tournamentId, userId);
+      addNotification({ type: 'success', title: 'Tournament Started', message: 'Bracket has been generated' });
+      fetchTournaments();
+    } catch (err) {
+      addNotification({ type: 'error', title: 'Start Failed', message: err.response?.data?.detail || 'Could not start tournament' });
     }
   };
 
@@ -244,6 +299,36 @@ export default function TournamentsPage() {
               <p style={{ color: '#999', fontSize: '0.85rem', margin: '1rem 0 0 0' }}>
                 Prize Pool: R{tournament.prize_pool.toFixed(2)}
               </p>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', alignItems: 'center' }}>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    // open tournament details (could be expanded later)
+                    window.location.href = `/tournaments/${tournament.id}`;
+                  }}
+                >
+                  👁️ View Details
+                </button>
+
+                {isAuthenticated && tournament.status === 'registration' && (
+                  tournament.created_by_id === userId ? (
+                    <button 
+                      className="btn btn-primary"
+                      onClick={() => handleStartTournament(tournament.id)}
+                    >
+                      🎮 Start Tournament
+                    </button>
+                  ) : (
+                    <button 
+                      className="btn btn-primary"
+                      onClick={() => handleRegisterTournament(tournament.id)}
+                    >
+                      ✋ Register
+                    </button>
+                  )
+                )}
+              </div>
             </div>
           ))}
         </div>

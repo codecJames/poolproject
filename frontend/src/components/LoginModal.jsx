@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { login } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import '../styles/AuthModal.css';
 
 export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
@@ -7,6 +9,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login: authLogin } = useAuth();
+  const { addNotification } = useNotification();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,18 +30,29 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
       // Call login API
       const response = await login(email, password);
       
-      // Store user data in localStorage
-      localStorage.setItem('user', JSON.stringify(response));
+      // Update auth context
+      authLogin(response);
       
-      alert('Login successful!');
+      addNotification({
+        type: 'success',
+        title: 'Welcome back!',
+        message: `Successfully logged in as ${response.full_name}`,
+        duration: 3000,
+      });
+      
       setEmail('');
       setPassword('');
       onClose();
       
-      // Optional: refresh the page or update app state
-      window.location.reload();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.');
+      const errorMessage = err.response?.data?.detail || 'Login failed. Please try again.';
+      setError(errorMessage);
+      addNotification({
+        type: 'error',
+        title: 'Login Failed',
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }

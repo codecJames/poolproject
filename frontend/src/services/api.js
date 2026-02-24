@@ -17,7 +17,7 @@ export const signup = async (fullName, email, password) => {
       email,
       password,
     });
-    return response.data;
+    return response.data; // { token, user }
   } catch (error) {
     console.error('Signup error:', error);
     throw error;
@@ -26,10 +26,9 @@ export const signup = async (fullName, email, password) => {
 
 export const login = async (email, password) => {
   try {
-    const response = await apiClient.post('/users/login', null, {
-      params: { email, password }
-    });
-    return response.data;
+    // send as JSON body for clarity
+    const response = await apiClient.post('/users/login', { email, password });
+    return response.data; // { token, user }
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -333,4 +332,116 @@ export const getChallengeResult = async (challengeId) => {
   }
 };
 
-export default apiClient;
+// Tournament endpoints
+export const createTournament = async (tournamentData, userId) => {
+  try {
+    const response = await apiClient.post('/tournaments/', tournamentData, {
+      params: { user_id: userId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating tournament:', error);
+    throw error;
+  }
+};
+
+export const getTournaments = async (publicOnly = true, status = null) => {
+  try {
+    const params = { public_only: publicOnly };
+    if (status) params.status = status;
+    const response = await apiClient.get('/tournaments/', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tournaments:', error);
+    throw error;
+  }
+};
+
+export const getMyTournaments = async (userId) => {
+  try {
+    const response = await apiClient.get('/tournaments/my', {
+      params: { user_id: userId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching my tournaments:', error);
+    throw error;
+  }
+};
+
+export const getTournament = async (tournamentId) => {
+  try {
+    const response = await apiClient.get(`/tournaments/${tournamentId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching tournament ${tournamentId}:`, error);
+    throw error;
+  }
+};
+
+export const registerForTournament = async (tournamentId, userId) => {
+  try {
+    const response = await apiClient.post(
+      `/tournaments/${tournamentId}/register`,
+      {},
+      { params: { user_id: userId } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error registering for tournament ${tournamentId}:`, error);
+    throw error;
+  }
+};
+
+export const unregisterFromTournament = async (tournamentId, userId) => {
+  try {
+    const response = await apiClient.post(
+      `/tournaments/${tournamentId}/unregister`,
+      {},
+      { params: { user_id: userId } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error unregistering from tournament ${tournamentId}:`, error);
+    throw error;
+  }
+};
+
+export const startTournament = async (tournamentId, userId) => {
+  try {
+    const response = await apiClient.post(
+      `/tournaments/${tournamentId}/start`,
+      {},
+      { params: { user_id: userId } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error starting tournament ${tournamentId}:`, error);
+    throw error;
+  }
+};
+
+export const updateMatchResult = async (tournamentId, matchId, matchData, userId) => {
+  try {
+    const response = await apiClient.put(
+      `/tournaments/${tournamentId}/matches/${matchId}`,
+      matchData,
+      { params: { user_id: userId } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating match result:`, error);
+    throw error;
+  }
+};
+
+export const getTournamentBrackets = async (tournamentId) => {
+  try {
+    const response = await apiClient.get(`/tournaments/${tournamentId}/brackets`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching tournament brackets:`, error);
+    throw error;
+  }
+};
+

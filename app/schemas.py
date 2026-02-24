@@ -108,19 +108,71 @@ class Player(PlayerBase):
 # Tournament schemas
 class TournamentBase(BaseModel):
     name: str
-    location: str = "UCT"
-    start_date: datetime
-    entry_fee: float = 0.0
+    rules: str = ""
+    is_public: bool = True
+    max_players: int = 32
 
 class TournamentCreate(TournamentBase):
     pass
 
 class Tournament(TournamentBase):
     id: int
-    prize_pool: float
+    created_by_id: int
+    status: str  # registration, in_progress, completed
+    created_at: datetime
+    start_date: Optional[datetime] = None
+    bracket_data: dict = {}
+    prize_pool: float = 0.0
     
     class Config:
         from_attributes = True
+
+class TournamentDetail(Tournament):
+    registrations: List['TournamentRegistration'] = []
+    matches: List['TournamentMatch'] = []
+
+# Tournament Registration schemas
+class TournamentRegistrationBase(BaseModel):
+    user_id: int
+
+class TournamentRegistrationCreate(TournamentRegistrationBase):
+    pass
+
+class TournamentRegistration(TournamentRegistrationBase):
+    id: int
+    tournament_id: int
+    registered_at: datetime
+    user: Optional[User] = None
+    
+    class Config:
+        from_attributes = True
+
+# Tournament Match schemas
+class TournamentMatchBase(BaseModel):
+    round_number: int
+    match_position: int
+
+class TournamentMatchCreate(TournamentMatchBase):
+    pass
+
+class TournamentMatch(TournamentMatchBase):
+    id: int
+    tournament_id: int
+    player1_id: Optional[int] = None
+    player2_id: Optional[int] = None
+    winner_id: Optional[int] = None
+    player1_score: int = 0
+    player2_score: int = 0
+    completed: bool = False
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class TournamentMatchUpdate(BaseModel):
+    player1_score: int
+    player2_score: int
+    winner_id: int
 
 # Match schemas
 class MatchBase(BaseModel):

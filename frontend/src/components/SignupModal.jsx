@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { signup } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import '../styles/AuthModal.css';
 
 export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
@@ -11,6 +13,8 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { signup: authSignup } = useAuth();
+  const { addNotification } = useNotification();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,10 +50,16 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
       // Call signup API
       const response = await signup(formData.fullName, formData.email, formData.password);
       
-      // Store user data in localStorage
-      localStorage.setItem('user', JSON.stringify(response));
+      // Update auth context
+      authSignup(response);
       
-      alert('Account created successfully! You are now logged in.');
+      addNotification({
+        type: 'success',
+        title: 'Account Created!',
+        message: `Welcome to UCT Supa Pool, ${response.full_name}!`,
+        duration: 3000,
+      });
+      
       setFormData({
         fullName: '',
         email: '',
@@ -58,10 +68,15 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
       });
       onClose();
       
-      // Optional: refresh the page or update app state
-      window.location.reload();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Signup failed. Please try again.');
+      const errorMessage = err.response?.data?.detail || 'Signup failed. Please try again.';
+      setError(errorMessage);
+      addNotification({
+        type: 'error',
+        title: 'Signup Failed',
+        message: errorMessage,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }

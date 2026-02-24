@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Boolean, JSON, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -100,13 +100,55 @@ class Tournament(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    location = Column(String, default="UCT")
-    start_date = Column(DateTime, nullable=False)
-    entry_fee = Column(Float, default=0.0)
+    rules = Column(Text, default="")
+    is_public = Column(Boolean, default=True)
+    max_players = Column(Integer, default=32)
+    status = Column(String, default="registration")  # registration, in_progress, completed
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    start_date = Column(DateTime, nullable=True)
+    bracket_data = Column(JSON, default={})
     prize_pool = Column(Float, default=0.0)
     
     # Relationships
-    matches = relationship("Match", back_populates="tournament")
+    creator = relationship("User", foreign_keys=[created_by_id])
+    registrations = relationship("TournamentRegistration", back_populates="tournament", cascade="all, delete-orphan")
+    matches = relationship("TournamentMatch", back_populates="tournament", cascade="all, delete-orphan")
+
+
+class TournamentRegistration(Base):
+    __tablename__ = "tournament_registrations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    registered_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    tournament = relationship("Tournament", back_populates="registrations")
+    user = relationship("User")
+
+
+class TournamentMatch(Base):
+    __tablename__ = "tournament_matches"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tournament_id = Column(Integer, ForeignKey("tournaments.id"), nullable=False)
+    round_number = Column(Integer, nullable=False)
+    match_position = Column(Integer, nullable=False)
+    player1_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    player2_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    winner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    player1_score = Column(Integer, default=0)
+    player2_score = Column(Integer, default=0)
+    completed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    tournament = relationship("Tournament", back_populates="matches")
+    player1 = relationship("User", foreign_keys=[player1_id])
+    player2 = relationship("User", foreign_keys=[player2_id])
+    winner = relationship("User", foreign_keys=[winner_id])
 
 
 class Match(Base):
