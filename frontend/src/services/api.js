@@ -9,6 +9,8 @@ const apiClient = axios.create({
   },
 });
 
+export default apiClient;
+
 // Auth endpoints
 export const signup = async (fullName, email, password) => {
   try {
@@ -179,30 +181,6 @@ export const recordTeamResult = async (teamId, wins = 0, draws = 0, losses = 0) 
 };
 
 // Tournament endpoints
-export const getTournaments = async () => {
-  try {
-    const response = await apiClient.get('/tournaments');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching tournaments:', error);
-    throw error;
-  }
-};
-
-export const createTournament = async (name, startDate, location = 'UCT', entryFee = 0) => {
-  try {
-    const response = await apiClient.post('/tournaments', {
-      name,
-      start_date: startDate,
-      location,
-      entry_fee: entryFee,
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error creating tournament:', error);
-    throw error;
-  }
-};
 
 // Money Match endpoints
 export const createMoneyMatch = async (player1Id, player2Id, player1Score, player2Score, moneyWagered) => {
