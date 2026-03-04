@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Navigation.css';
 
@@ -7,6 +7,8 @@ export default function Navigation() {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const profileRef = useRef(null);
 
   const isActive = (path) => location.pathname === path;
 
@@ -15,116 +17,99 @@ export default function Navigation() {
     setShowProfileMenu(false);
   };
 
+  const navItems = [
+    { to: '/players', label: 'Players' },
+    { to: '/clubs', label: 'Clubs' },
+    { to: '/tournaments', label: 'Tournaments' },
+    { to: '/leagues', label: 'Leagues' },
+    { to: '/money-match', label: 'Money Match' },
+    { to: '/shop', label: 'Shop' },
+  ];
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setShowProfileMenu(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <nav className="navbar">
       <div className="nav-container">
-        <Link to={isAuthenticated ? "/dashboard" : "/"} className="nav-logo">
-          🎱 UCT Supa Pool
+        <Link to={isAuthenticated ? '/dashboard' : '/'} className="nav-logo">
+          <span className="logo-mark">SP</span>
+          <span className="logo-text">UCT Supa Pool</span>
         </Link>
 
-        <ul className="nav-menu">
-          <li className="nav-item">
-            <Link
-              to="/players"
-              className={`nav-link ${isActive('/players') ? 'active' : ''}`}
-            >
-              👥 Players
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
-              to="/clubs"
-              className={`nav-link ${isActive('/clubs') ? 'active' : ''}`}
-            >
-              🏛️ Clubs
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
-              to="/tournaments"
-              className={`nav-link ${isActive('/tournaments') ? 'active' : ''}`}
-            >
-              🏆 Tournaments
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
-              to="/leagues"
-              className={`nav-link ${isActive('/leagues') ? 'active' : ''}`}
-            >
-              📊 Leagues
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
-              to="/money-match"
-              className={`nav-link ${isActive('/money-match') ? 'active' : ''}`}
-            >
-              💰 Money Match
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link
-              to="/shop"
-              className={`nav-link ${isActive('/shop') ? 'active' : ''}`}
-            >
-              🛍️ Shop
-            </Link>
-          </li>
-        </ul>
+        <button
+          className={`menu-toggle ${menuOpen ? 'open' : ''}`}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Toggle navigation"
+          aria-expanded={menuOpen}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
 
-        {/* Profile Section */}
-        {isAuthenticated ? (
-          <div className="profile-section">
-            <button 
-              className="profile-btn"
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-            >
-              <span className="profile-avatar">
-                {user?.full_name?.charAt(0).toUpperCase() || '👤'}
-              </span>
-              <span className="profile-name">{user?.full_name?.split(' ')[0]}</span>
-            </button>
+        <div className={`nav-right ${menuOpen ? 'open' : ''}`}>
+          <ul className="nav-menu">
+            {navItems.map((item) => (
+              <li key={item.to} className="nav-item">
+                <Link
+                  to={item.to}
+                  className={`nav-link ${isActive(item.to) ? 'active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
-            {showProfileMenu && (
-              <div className="profile-dropdown">
-                <div className="dropdown-header">
-                  <p className="dropdown-name">{user?.full_name}</p>
-                  <p className="dropdown-email">{user?.email}</p>
+          {isAuthenticated ? (
+            <div className="profile-section" ref={profileRef}>
+              <button
+                className="profile-btn"
+                onClick={() => setShowProfileMenu((prev) => !prev)}
+                aria-expanded={showProfileMenu}
+              >
+                <span className="profile-avatar">
+                  {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+                </span>
+                <span className="profile-name">{user?.full_name?.split(' ')[0]}</span>
+              </button>
+
+              {showProfileMenu && (
+                <div className="profile-dropdown">
+                  <div className="dropdown-header">
+                    <p className="dropdown-name">{user?.full_name}</p>
+                    <p className="dropdown-email">{user?.email}</p>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <Link
+                    to="/dashboard"
+                    className="dropdown-item"
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button className="dropdown-item logout-btn" onClick={handleLogout}>
+                    Log out
+                  </button>
                 </div>
-                <div className="dropdown-divider"></div>
-                <Link 
-                  to="/dashboard" 
-                  className="dropdown-item"
-                  onClick={() => setShowProfileMenu(false)}
-                >
-                  📊 Dashboard
-                </Link>
-                <Link 
-                  to="/profile" 
-                  className="dropdown-item"
-                  onClick={() => setShowProfileMenu(false)}
-                >
-                  👤 Profile
-                </Link>
-                <Link 
-                  to="/settings" 
-                  className="dropdown-item"
-                  onClick={() => setShowProfileMenu(false)}
-                >
-                  ⚙️ Settings
-                </Link>
-                <div className="dropdown-divider"></div>
-                <button 
-                  className="dropdown-item logout-btn"
-                  onClick={handleLogout}
-                >
-                  🚪 Logout
-                </button>
-              </div>
-            )}
-          </div>
-        ) : null}
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
     </nav>
   );

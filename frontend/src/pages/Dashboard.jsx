@@ -1,8 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Dashboard.css';
 import { getPlayer } from '../services/api';
+
+const quickLinks = [
+  { to: '/money-match', title: 'Money Match', subtitle: 'Challenge now' },
+  { to: '/players', title: 'Players', subtitle: 'View rankings' },
+  { to: '/tournaments', title: 'Tournaments', subtitle: 'Active events' },
+  { to: '/leagues', title: 'Leagues', subtitle: 'Season tables' },
+];
+
+const features = [
+  {
+    title: 'Money Match',
+    description: 'Set up head-to-head games and track results quickly.',
+    to: '/money-match',
+    cta: 'Start Playing',
+  },
+  {
+    title: 'Tournaments',
+    description: 'Compete in structured events and monitor bracket progress.',
+    to: '/tournaments',
+    cta: 'View Tournaments',
+  },
+  {
+    title: 'Leagues',
+    description: 'Stay on top of the standings across every season.',
+    to: '/leagues',
+    cta: 'Open Leagues',
+  },
+];
 
 export default function Dashboard() {
   const { user, userId, isAuthenticated } = useAuth();
@@ -37,104 +65,84 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div className="page-container"><p className="loading">Loading dashboard...</p></div>;
+    return (
+      <div className="page-container">
+        <p className="loading">Loading dashboard...</p>
+      </div>
+    );
   }
 
   return (
     <div className="dashboard-page">
-      <div className="dashboard-header">
+      <header className="dashboard-header">
         <div className="header-content">
-          <h1>Welcome back, {user?.full_name}! 👋</h1>
-          <p className="header-subtitle">Your pool statistics and current standing</p>
+          <span className="header-kicker">Dashboard</span>
+          <h1>Welcome back, {user?.full_name}</h1>
+          <p className="header-subtitle">Your latest activity, stats, and shortcuts.</p>
         </div>
-      </div>
+      </header>
 
       <div className="dashboard-container">
-        {/* Main Stats Card */}
-        <div className="stats-section">
-          <div className="profile-card">
-            <div className="profile-avatar">
-              {user?.full_name?.charAt(0).toUpperCase()}
-            </div>
+        <section className="stats-section">
+          <article className="profile-card">
+            <div className="profile-avatar">{user?.full_name?.charAt(0).toUpperCase()}</div>
             <h2>{user?.full_name}</h2>
             <p className="profile-email">{user?.email}</p>
-            
+
             <div className="profile-stats">
               <div className="stat">
                 <span className="stat-label">Player ID</span>
                 <span className="stat-value">#{userId}</span>
               </div>
               <div className="stat">
-                <span className="stat-label">Member Since</span>
-                <span className="stat-value">Feb 2026</span>
+                <span className="stat-label">Wins</span>
+                <span className="stat-value">{playerStats?.wins ?? 0}</span>
               </div>
             </div>
-          </div>
+          </article>
 
-          <div className="quick-actions">
+          <article className="quick-actions">
             <h3>Quick Actions</h3>
             <div className="actions-grid">
-              <a href="/money-match" className="action-btn">
-                <span className="action-icon">💰</span>
-                <span className="action-text">Money Match</span>
-              </a>
-              <a href="/players" className="action-btn">
-                <span className="action-icon">👥</span>
-                <span className="action-text">View Players</span>
-              </a>
-              <a href="/tournaments" className="action-btn">
-                <span className="action-icon">🏆</span>
-                <span className="action-text">Tournaments</span>
-              </a>
-              <a href="/leagues" className="action-btn">
-                <span className="action-icon">📊</span>
-                <span className="action-text">Leagues</span>
-              </a>
+              {quickLinks.map((item) => (
+                <Link key={item.to} to={item.to} className="action-btn">
+                  <span className="action-title">{item.title}</span>
+                  <span className="action-text">{item.subtitle}</span>
+                </Link>
+              ))}
             </div>
-          </div>
-        </div>
+          </article>
+        </section>
 
-        {/* Activity Section */}
-        <div className="activity-section">
+        <section className="activity-section">
           <h3>Recent Activity</h3>
           <div className="activity-list">
             <div className="activity-item">
-              <span className="activity-icon">🎯</span>
               <div className="activity-content">
-                <p className="activity-title">Account Created</p>
-                <p className="activity-time">Welcome to UCT Supa Pool!</p>
+                <p className="activity-title">Account active</p>
+                <p className="activity-time">Welcome to your Supa Pool dashboard.</p>
               </div>
             </div>
             <div className="activity-item">
-              <span className="activity-icon">💡</span>
               <div className="activity-content">
                 <p className="activity-title">Tip</p>
-                <p className="activity-time">Challenge other players in Money Match to earn rewards!</p>
+                <p className="activity-time">Use Money Match to challenge other players quickly.</p>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Featured Sections */}
-        <div className="featured-section">
-          <div className="feature-card">
-            <h3>💰 Money Match</h3>
-            <p>Challenge other players with wager amounts. Win matches to earn real rewards!</p>
-            <a href="/money-match" className="btn btn-primary">Start Playing</a>
-          </div>
-          
-          <div className="feature-card">
-            <h3>🏆 Tournaments</h3>
-            <p>Participate in exciting pool tournaments and compete for rankings.</p>
-            <a href="/tournaments" className="btn btn-primary">View Tournaments</a>
-          </div>
-          
-          <div className="feature-card">
-            <h3>📊 Leagues</h3>
-            <p>Join leagues and climb the seasonal ladder to prove your skills.</p>
-            <a href="/leagues" className="btn btn-primary">Join a League</a>
-          </div>
-        </div>
+        <section className="featured-section">
+          {features.map((item) => (
+            <article key={item.title} className="feature-card">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <Link to={item.to} className="btn btn-primary">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
+        </section>
       </div>
     </div>
   );

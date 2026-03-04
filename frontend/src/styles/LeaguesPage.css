@@ -6,10 +6,11 @@
 
 /* Register Team Section */
 .register-team-section {
-  background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+  background: linear-gradient(135deg, rgba(219, 234, 254, 0.6) 0%, rgba(240, 249, 255, 0.4) 100%);
+  border: 1px solid #bfdbfe;
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
 }
 
 .section-header {
@@ -22,14 +23,17 @@
 
 .section-header h2 {
   font-size: 1.6rem;
-  color: #646cff;
+  background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
   flex: 1;
 }
 
 .team-count {
-  background-color: rgba(100, 108, 255, 0.2);
-  color: #646cff;
+  background-color: rgba(37, 99, 235, 0.2);
+  color: #2563eb;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-weight: 600;
@@ -38,10 +42,10 @@
 
 .toggle-btn {
   padding: 0.7rem 1.3rem;
-  border: 2px solid #646cff;
+  border: 2px solid #2563eb;
   border-radius: 6px;
   background-color: transparent;
-  color: #646cff;
+  color: #2563eb;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
