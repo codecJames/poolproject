@@ -2,6 +2,41 @@ import { useState, useEffect } from 'react';
 import { getTeams, createTeam, recordTeamResult, getLeagues } from '../services/api';
 import '../styles/LeaguesPage.css';
 
+const PRESET_TEAM_NAMES = [
+  'Shooter Specials',
+  'Kilindini',
+  'Varietas',
+  'Forest Hill',
+  'Avenue Road',
+  'Liesbeek',
+  'Medical Res',
+  'Groote Schur',
+  'Kopano',
+  'Obz Square',
+];
+
+const mergeTeamsWithPresetNames = (apiTeams) => {
+  const existingNames = new Set(
+    apiTeams
+      .map((team) => team.name?.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const missingPresetTeams = PRESET_TEAM_NAMES
+    .filter((teamName) => !existingNames.has(teamName.toLowerCase()))
+    .map((teamName, index) => ({
+      id: `preset-${index}`,
+      name: teamName,
+      members: [],
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      points: 0,
+    }));
+
+  return [...apiTeams, ...missingPresetTeams];
+};
+
 export default function LeaguesPage() {
   const [teams, setTeams] = useState([]);
   const [leagues, setLeagues] = useState([]);
@@ -26,7 +61,7 @@ export default function LeaguesPage() {
         getTeams(),
         getLeagues()
       ]);
-      setTeams(teamsData);
+      setTeams(mergeTeamsWithPresetNames(teamsData));
       setLeagues(leaguesData);
       setError(null);
     } catch (err) {
@@ -65,8 +100,20 @@ export default function LeaguesPage() {
       // For now, we'll use a temporary captain ID (1), in a real app this would be the logged-in user
       // And a default league ID (1), in a real app this would be selected
       const newTeam = await createTeam(formData.teamName, 1, 1);
-      
-      setTeams([...teams, newTeam]);
+
+      setTeams((previousTeams) => {
+        const normalizedNewName = newTeam.name?.trim().toLowerCase();
+        const withoutMatchingPreset = previousTeams.filter((team) => {
+          const isPreset = typeof team.id === 'string' && team.id.startsWith('preset-');
+          if (!isPreset) {
+            return true;
+          }
+
+          return team.name?.trim().toLowerCase() !== normalizedNewName;
+        });
+
+        return [...withoutMatchingPreset, newTeam];
+      });
       setFormData({ teamName: '', teamCaptain: '', playersList: '' });
       setShowRegisterForm(false);
     } catch (err) {
