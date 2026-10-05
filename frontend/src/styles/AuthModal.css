@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(3, 8, 5, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,15 +23,15 @@
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
-  border: 2px solid #3b82f6;
-  border-radius: 16px;
+  background: linear-gradient(160deg, var(--felt-700) 0%, var(--felt-900) 100%);
+  border: 1px solid var(--brass-600);
+  border-radius: var(--radius-lg);
   padding: 2rem;
   max-width: 450px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px rgba(37, 99, 235, 0.15), 0 0 100px rgba(37, 99, 235, 0.05);
+  box-shadow: var(--shadow-medium), 0 0 60px rgba(207, 159, 60, 0.08);
   position: relative;
   animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -53,15 +53,17 @@
   right: 1rem;
   background: none;
   border: none;
-  font-size: 1.5rem;
-  color: #aaa;
+  font-size: 1.3rem;
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: color 0.2s;
   padding: 0.25rem 0.5rem;
+  box-shadow: none;
 }
 
 .modal-close:hover {
-  color: #fff;
+  color: var(--text-primary);
+  transform: none;
 }
 
 .modal-header {
@@ -70,13 +72,13 @@
 }
 
 .modal-header h2 {
-  font-size: 1.8rem;
-  color: #646cff;
+  font-size: 1.6rem;
+  color: var(--brass-300);
   margin: 0 0 0.5rem 0;
 }
 
 .modal-header p {
-  color: #aaa;
+  color: var(--text-tertiary);
   margin: 0;
   font-size: 1rem;
 }
@@ -95,25 +97,25 @@
 
 .form-group label {
   font-weight: 600;
-  color: #fff;
-  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
 }
 
 .form-group input {
   padding: 0.75rem;
-  border: 2px solid #404040;
-  border-radius: 6px;
-  background-color: #1a1a1a;
-  color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: rgba(5, 15, 10, 0.4);
+  color: var(--text-primary);
   font-size: 1rem;
-  transition: all 0.2s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   font-family: inherit;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #646cff;
-  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
+  border-color: var(--chalk-400);
+  box-shadow: 0 0 0 3px rgba(79, 134, 207, 0.2);
 }
 
 .form-group input:disabled {
@@ -122,73 +124,63 @@
 }
 
 .form-group input::placeholder {
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .error-message {
-  background-color: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
+  background-color: rgba(226, 102, 90, 0.12);
+  color: #f2988e;
   padding: 0.75rem;
-  border-radius: 6px;
-  border-left: 4px solid #ff6b6b;
-  font-size: 0.95rem;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--error);
+  font-size: 0.92rem;
   margin-bottom: 0.5rem;
 }
 
 .btn-submit {
   padding: 0.9rem;
   border: none;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
-  color: white;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-500) 55%, var(--brass-600) 100%);
+  color: #241606;
   font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
+  font-weight: 700;
   margin-top: 0.5rem;
 }
 
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(100, 108, 255, 0.3);
-}
-
-.btn-submit:active:not(:disabled) {
-  transform: translateY(0);
-}
-
 .btn-submit:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .auth-footer {
   text-align: center;
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #404040;
+  border-top: 1px solid var(--border-color);
 }
 
 .auth-footer p {
-  color: #aaa;
-  font-size: 0.95rem;
+  color: var(--text-tertiary);
+  font-size: 0.92rem;
   margin: 0;
 }
 
 .link-btn {
   background: none;
   border: none;
-  color: #646cff;
+  color: var(--brass-300);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0;
-  margin-left: 0.5rem;
+  margin-left: 0.4rem;
+  box-shadow: none;
   transition: color 0.2s;
 }
 
 .link-btn:hover {
-  color: #535bf2;
+  color: var(--brass-400);
   text-decoration: underline;
+  transform: none;
 }
 
 @media (max-width: 480px) {
@@ -198,7 +190,7 @@
   }
 
   .modal-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .auth-form {

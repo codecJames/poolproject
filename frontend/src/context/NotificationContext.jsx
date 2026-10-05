@@ -2,11 +2,17 @@ import { createContext, useContext, useState, useCallback } from 'react';
 
 const NotificationContext = createContext();
 
+let nextId = 1;
+
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
 
+  const removeNotification = useCallback((id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
   const addNotification = useCallback((notification) => {
-    const id = Date.now();
+    const id = nextId++;
     const newNotification = {
       id,
       type: 'info', // 'info', 'success', 'error', 'warning'
@@ -24,11 +30,7 @@ export const NotificationProvider = ({ children }) => {
     }
 
     return id;
-  }, []);
-
-  const removeNotification = useCallback((id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
+  }, [removeNotification]);
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
@@ -48,6 +50,7 @@ export const NotificationProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {

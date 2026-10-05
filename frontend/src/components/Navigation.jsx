@@ -5,16 +5,16 @@ import '../styles/Navigation.css';
 
 export default function Navigation() {
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, openLogin, openSignup } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const profileRef = useRef(null);
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const handleLogout = () => {
     logout();
-    setShowProfileMenu(false);
+    closeMenus();
   };
 
   const navItems = [
@@ -22,14 +22,14 @@ export default function Navigation() {
     { to: '/clubs', label: 'Clubs' },
     { to: '/tournaments', label: 'Tournaments' },
     { to: '/leagues', label: 'Leagues' },
-    { to: '/money-match', label: 'Money Match' },
+    { to: '/challenges', label: 'Challenges' },
     { to: '/shop', label: 'Shop' },
   ];
 
-  useEffect(() => {
+  const closeMenus = () => {
     setMenuOpen(false);
     setShowProfileMenu(false);
-  }, [location.pathname]);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -46,7 +46,9 @@ export default function Navigation() {
     <nav className="navbar">
       <div className="nav-container">
         <Link to={isAuthenticated ? '/dashboard' : '/'} className="nav-logo">
-          <span className="logo-mark">SP</span>
+          <span className="logo-mark">
+            <span className="logo-mark-number">8</span>
+          </span>
           <span className="logo-text">UCT Supa Pool</span>
         </Link>
 
@@ -68,6 +70,7 @@ export default function Navigation() {
                 <Link
                   to={item.to}
                   className={`nav-link ${isActive(item.to) ? 'active' : ''}`}
+                  onClick={closeMenus}
                 >
                   {item.label}
                 </Link>
@@ -98,7 +101,7 @@ export default function Navigation() {
                   <Link
                     to="/dashboard"
                     className="dropdown-item"
-                    onClick={() => setShowProfileMenu(false)}
+                    onClick={closeMenus}
                   >
                     Dashboard
                   </Link>
@@ -108,7 +111,12 @@ export default function Navigation() {
                 </div>
               )}
             </div>
-          ) : null}
+          ) : (
+            <div className="nav-auth">
+              <button className="btn-outline btn-small" onClick={() => { closeMenus(); openLogin(); }}>Log in</button>
+              <button className="btn-small" onClick={() => { closeMenus(); openSignup(); }}>Sign up</button>
+            </div>
+          )}
         </div>
       </div>
     </nav>

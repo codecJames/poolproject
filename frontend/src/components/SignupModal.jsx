@@ -1,121 +1,109 @@
 import { useState } from 'react';
-import { signup } from '../services/api';
+import { errorMessage, signup } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import '../styles/AuthModal.css';
 
-export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+const EMPTY_FORM = { fullName: '', email: '', password: '', confirmPassword: '' };
+
+export default function SignupModal() {
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signup: authSignup } = useAuth();
+  const { authModal, signup: startSession, closeAuthModal, openLogin } = useAuth();
   const { addNotification } = useNotification();
+
+  if (authModal !== 'signup') return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const reset = () => {
+    setFormData(EMPTY_FORM);
+    setError('');
+  };
+
+  const handleClose = () => {
+    reset();
+    closeAuthModal();
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.password || !formData.confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+    if (!formData.email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
-
     try {
-      if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-        setError('Please fill in all fields');
-        return;
-      }
-      if (!formData.email.includes('@')) {
-        setError('Please enter a valid email');
-        return;
-      }
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters');
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
-
-      // Call signup API
-      const response = await signup(formData.fullName, formData.email, formData.password);
-      
-      // Update auth context
-      authSignup(response);
-      
+      const response = await signup(formData.fullName.trim(), formData.email.trim(), formData.password);
+      startSession(response);
       addNotification({
         type: 'success',
-        title: 'Account Created!',
-        message: `Welcome to UCT Supa Pool, ${response.full_name}!`,
+        title: 'Account created!',
+        message: `Welcome to UCT Supa Pool, ${response.user.full_name}!`,
         duration: 3000,
       });
-      
-      setFormData({
-        fullName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-      });
-      onClose();
-      
+      handleClose();
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Signup failed. Please try again.';
-      setError(errorMessage);
-      addNotification({
-        type: 'error',
-        title: 'Signup Failed',
-        message: errorMessage,
-        duration: 5000,
-      });
+      setError(errorMessage(err, 'Signup failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>✕</button>
-        
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="signup-title">
+        <button className="modal-close" onClick={handleClose} aria-label="Close">✕</button>
+
         <div className="modal-header">
-          <h2>Create Your Account</h2>
+          <h2 id="signup-title">Create your account</h2>
           <p>Join UCT Supa Pool today!</p>
         </div>
 
         <form onSubmit={handleSignup} className="auth-form">
           {error && <div className="error-message">{error}</div>}
-          
+
           <div className="form-group">
-            <label htmlFor="fullName">Full Name</label>
+            <label htmlFor="signup-name">Full name</label>
             <input
-              id="fullName"
+              id="signup-name"
               type="text"
               name="fullName"
+              autoComplete="name"
               value={formData.fullName}
               onChange={handleChange}
-              placeholder="John Doe"
+              placeholder="Your name"
               disabled={isLoading}
+              autoFocus
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="signup-email">Email</label>
             <input
-              id="email"
+              id="signup-email"
               type="email"
               name="email"
+              autoComplete="email"
               value={formData.email}
               onChange={handleChange}
               placeholder="your@email.com"
@@ -124,24 +112,26 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="signup-password">Password</label>
             <input
-              id="password"
+              id="signup-password"
               type="password"
               name="password"
+              autoComplete="new-password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="••••••••"
+              placeholder="At least 6 characters"
               disabled={isLoading}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="signup-confirm">Confirm password</label>
             <input
-              id="confirmPassword"
+              id="signup-confirm"
               type="password"
               name="confirmPassword"
+              autoComplete="new-password"
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="••••••••"
@@ -150,25 +140,14 @@ export default function SignupModal({ isOpen, onClose, onSwitchToLogin }) {
           </div>
 
           <button type="submit" className="btn-submit" disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : 'Create Account'}
+            {isLoading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
         <div className="auth-footer">
-          <p>Already have an account? 
-            <button 
-              className="link-btn" 
-              onClick={() => {
-                setFormData({
-                  fullName: '',
-                  email: '',
-                  password: '',
-                  confirmPassword: '',
-                });
-                setError('');
-                onSwitchToLogin();
-              }}
-            >
+          <p>
+            Already have an account?
+            <button className="link-btn" onClick={() => { reset(); openLogin(); }}>
               Log in
             </button>
           </p>

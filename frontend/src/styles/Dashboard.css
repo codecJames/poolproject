@@ -9,7 +9,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: clamp(1.2rem, 2.6vw, 2rem);
-  background: linear-gradient(145deg, #ffffff, #f3f8ff);
+  background: linear-gradient(160deg, rgba(28, 74, 47, 0.55) 0%, rgba(14, 42, 27, 0.65) 100%);
   box-shadow: var(--shadow-soft);
 }
 
@@ -24,10 +24,11 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 800;
-  color: var(--primary);
+  color: var(--brass-300);
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   padding: 0.3rem 0.65rem;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .header-content h1 {
@@ -55,7 +56,7 @@
 .feature-card {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(160deg, rgba(28, 74, 47, 0.5) 0%, rgba(14, 42, 27, 0.6) 100%);
   box-shadow: var(--shadow-soft);
 }
 
@@ -71,8 +72,8 @@
   margin: 0 auto 0.8rem;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #0f5bd8, #2f7af5);
-  color: #ffffff;
+  background: linear-gradient(160deg, var(--brass-300), var(--brass-600));
+  color: #241606;
   font-size: 1.7rem;
   font-weight: 800;
 }
@@ -109,7 +110,7 @@
 .stat-value {
   font-size: 1.3rem;
   font-weight: 800;
-  color: var(--primary);
+  color: var(--brass-300);
 }
 
 .quick-actions {
@@ -130,15 +131,16 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 0.8rem;
-  background: linear-gradient(145deg, #ffffff, #f4f8ff);
+  background: linear-gradient(160deg, rgba(28, 74, 47, 0.55), rgba(14, 42, 27, 0.65));
   display: grid;
   gap: 0.2rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 91, 216, 0.12);
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-glow);
 }
 
 .action-title {
@@ -169,7 +171,7 @@
   padding: 0.85rem 0.9rem;
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  background: #ffffff;
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .activity-title {
@@ -195,8 +197,9 @@
 }
 
 .feature-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(15, 91, 216, 0.12);
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-glow);
 }
 
 .feature-card p {

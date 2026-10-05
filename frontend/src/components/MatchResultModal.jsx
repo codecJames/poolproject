@@ -1,41 +1,90 @@
 import { useState } from 'react';
-import '../styles/MatchResultModal.css';
+import '../styles/AuthModal.css';
 
-export default function MatchResultModal({ match, onClose, onSubmit }) {
-  const [player1, setPlayer1] = useState(match.player1_score || 0);
-  const [player2, setPlayer2] = useState(match.player2_score || 0);
-  const [winner, setWinner] = useState(match.winner_id || null);
+// Score entry for a head-to-head game; the higher score wins
+export default function MatchResultModal({
+  title = 'Report result',
+  player1Name,
+  player2Name,
+  initialScores = [0, 0],
+  note,
+  submitLabel = 'Submit result',
+  onClose,
+  onSubmit,
+}) {
+  const [score1, setScore1] = useState(String(initialScores[0] ?? 0));
+  const [score2, setScore2] = useState(String(initialScores[1] ?? 0));
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const winnerId = parseInt(winner, 10) || (player1 > player2 ? match.player1_id : match.player2_id);
-    onSubmit({ player1: parseInt(player1, 10), player2: parseInt(player2, 10), winner: winnerId });
+    const first = Number.parseInt(score1, 10);
+    const second = Number.parseInt(score2, 10);
+    if (Number.isNaN(first) || Number.isNaN(second) || first < 0 || second < 0) {
+      setError('Enter both scores');
+      return;
+    }
+    if (first === second) {
+      setError("Scores can't be level; someone has to win");
+      return;
+    }
+    setError('');
+    setSaving(true);
+    try {
+      await onSubmit(first, second);
+    } catch (err) {
+      setError(err.message || 'Could not save the result');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="modal-small" onClick={onClose}>
-      <div className="modal-small-content" onClick={(e) => e.stopPropagation()}>
-        <h3>Submit Match Result</h3>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="result-title">
+        <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="modal-header">
+          <h2 id="result-title">{title}</h2>
+          <p>Frames won by each player</p>
+        </div>
+
         <form onSubmit={submit}>
-          <div className="score-row">
-            <label>{match.player1?.full_name || 'Player 1'}</label>
-            <input type="number" value={player1} onChange={(e)=>setPlayer1(e.target.value)} min="0" />
+          {error && <div className="error-message">{error}</div>}
+          <div className="versus">
+            <div className="field">
+              <label htmlFor="score-1">{player1Name}</label>
+              <input
+                id="score-1"
+                className="score-input"
+                type="number"
+                min="0"
+                max="99"
+                inputMode="numeric"
+                value={score1}
+                onChange={(e) => setScore1(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <span className="versus-sep">vs</span>
+            <div className="field">
+              <label htmlFor="score-2">{player2Name}</label>
+              <input
+                id="score-2"
+                className="score-input"
+                type="number"
+                min="0"
+                max="99"
+                inputMode="numeric"
+                value={score2}
+                onChange={(e) => setScore2(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="score-row">
-            <label>{match.player2?.full_name || 'Player 2'}</label>
-            <input type="number" value={player2} onChange={(e)=>setPlayer2(e.target.value)} min="0" />
-          </div>
-          <div className="form-group">
-            <label>Winner (optional)</label>
-            <select value={winner || ''} onChange={(e)=>setWinner(e.target.value)}>
-              <option value="">Auto (higher score)</option>
-              {match.player1_id && <option value={match.player1_id}>{match.player1?.full_name}</option>}
-              {match.player2_id && <option value={match.player2_id}>{match.player2?.full_name}</option>}
-            </select>
-          </div>
-          <div className="actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Submit</button>
+          {note && <p className="muted" style={{ marginTop: '1rem' }}>{note}</p>}
+          <div className="form-actions">
+            <button type="button" className="btn-outline" onClick={onClose}>Cancel</button>
+            <button type="submit" disabled={saving}>{saving ? 'Saving...' : submitLabel}</button>
           </div>
         </form>
       </div>

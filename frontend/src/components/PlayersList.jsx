@@ -2,11 +2,45 @@ import { useState, useEffect } from 'react';
 import { getPlayers } from '../services/api';
 import '../styles/PlayersList.css';
 
+const SORT_FIELDS = {
+  winRate: { label: 'Win Rate', get: (p) => Number(calculateWinRate(p)), defaultDir: 'desc' },
+  totalWins: { label: 'Wins', get: (p) => p.matches_won, defaultDir: 'desc' },
+  matchesPlayed: { label: 'Played', get: (p) => p.matches_played, defaultDir: 'desc' },
+  rating: { label: 'Rating', get: (p) => p.rating, defaultDir: 'desc' },
+  name: { label: 'Player', get: (p) => p.name.toLowerCase(), defaultDir: 'asc' },
+};
+
+function calculateWinRate(player) {
+  if (player.matches_played === 0) return 0;
+  return ((player.matches_won / player.matches_played) * 100).toFixed(2);
+}
+
+function useCountUp(target, duration = 800) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let raf;
+    const start = performance.now();
+    const animate = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(target * eased));
+      if (progress < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return value;
+}
+
 export default function PlayersList() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('winRate');
+  const [sortDir, setSortDir] = useState('desc');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     fetchPlayers();
@@ -26,30 +60,44 @@ export default function PlayersList() {
     }
   };
 
-  const calculateWinRate = (player) => {
-    if (player.matches_played === 0) return 0;
-    return ((player.matches_won / player.matches_played) * 100).toFixed(2);
+  const handleSort = (field) => {
+    if (field === sortBy) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(field);
+      setSortDir(SORT_FIELDS[field].defaultDir);
+    }
   };
 
-  const sortedPlayers = [...players].sort((a, b) => {
-    switch (sortBy) {
-      case 'winRate':
-        return calculateWinRate(b) - calculateWinRate(a);
-      case 'totalWins':
-        return b.matches_won - a.matches_won;
-      case 'matchesPlayed':
-        return b.matches_played - a.matches_played;
-      case 'rating':
-        return b.rating - a.rating;
-      case 'name':
-        return a.name.localeCompare(b.name);
-      default:
-        return 0;
-    }
+  const filteredPlayers = players.filter((p) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return p.name.toLowerCase().includes(q) || (p.university || '').toLowerCase().includes(q);
   });
 
+  const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+    const { get } = SORT_FIELDS[sortBy];
+    const va = get(a);
+    const vb = get(b);
+    const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const totalMatches = Math.floor(players.reduce((sum, p) => sum + p.matches_played, 0) / 2);
+  const playerCount = useCountUp(players.length);
+  const matchCount = useCountUp(totalMatches);
+
+  const topPlayer = [...players].sort((a, b) => calculateWinRate(b) - calculateWinRate(a))[0];
+
   if (loading) {
-    return <div className="container"><p className="loading">Loading players...</p></div>;
+    return (
+      <div className="container">
+        <div className="loading-state">
+          <span className="spinner" />
+          <p>Racking up the standings&hellip;</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -64,41 +112,57 @@ export default function PlayersList() {
   return (
     <div className="container">
       <div className="header">
-        <h1>🎱 Pool Players Statistics</h1>
-        <p className="subtitle">UCT Supa Pool Club Rankings</p>
+        <h1>Player Rankings</h1>
+        <p className="subtitle">UCT Supa Pool Club Standings</p>
       </div>
 
       <div className="controls">
-        <label htmlFor="sort-select">Sort by:</label>
-        <select
-          id="sort-select"
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="sort-select"
-        >
-          <option value="winRate">Win Rate (High to Low)</option>
-          <option value="totalWins">Total Wins (High to Low)</option>
-          <option value="matchesPlayed">Matches Played (High to Low)</option>
-          <option value="rating">Rating (High to Low)</option>
-          <option value="name">Name (A to Z)</option>
-        </select>
-        <button onClick={fetchPlayers} className="refresh-btn">🔄 Refresh</button>
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search by player or university&hellip;"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button onClick={fetchPlayers} className="refresh-btn">Refresh</button>
       </div>
 
       {sortedPlayers.length === 0 ? (
-        <p className="no-players">No players found.</p>
+        <p className="no-players">
+          {players.length === 0 ? 'No players found.' : 'No players match your search.'}
+        </p>
       ) : (
         <div className="table-wrapper">
           <table className="players-table">
             <thead>
               <tr>
-                <th>Rank</th>
-                <th>Player Name</th>
+                <th className="col-rank">Rank</th>
+                <th>
+                  <button className="sort-th" onClick={() => handleSort('name')}>
+                    Player <SortArrow active={sortBy === 'name'} dir={sortDir} />
+                  </button>
+                </th>
                 <th>University</th>
-                <th>Win Rate</th>
-                <th>Total Wins</th>
-                <th>Matches Played</th>
-                <th>Rating</th>
+                <th>
+                  <button className="sort-th" onClick={() => handleSort('winRate')}>
+                    Win Rate <SortArrow active={sortBy === 'winRate'} dir={sortDir} />
+                  </button>
+                </th>
+                <th>
+                  <button className="sort-th" onClick={() => handleSort('totalWins')}>
+                    Wins <SortArrow active={sortBy === 'totalWins'} dir={sortDir} />
+                  </button>
+                </th>
+                <th>
+                  <button className="sort-th" onClick={() => handleSort('matchesPlayed')}>
+                    Played <SortArrow active={sortBy === 'matchesPlayed'} dir={sortDir} />
+                  </button>
+                </th>
+                <th>
+                  <button className="sort-th" onClick={() => handleSort('rating')}>
+                    Rating <SortArrow active={sortBy === 'rating'} dir={sortDir} />
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -106,18 +170,26 @@ export default function PlayersList() {
                 const winRate = calculateWinRate(player);
                 return (
                   <tr key={player.id} className={index < 3 ? `rank-${index + 1}` : ''}>
-                    <td className="rank">#{index + 1}</td>
-                    <td className="player-name">{player.name}</td>
-                    <td className="university">{player.university || 'N/A'}</td>
-                    <td className="win-rate">
-                      <span className="stat-value">{winRate}%</span>
-                      <span className="stat-badge">{player.matches_played > 0 ? '✓' : '-'}</span>
+                    <td className="rank" data-label="Rank">
+                      {index < 3 ? (
+                        <span className={`rank-ball rank-ball-${index + 1}`}>{index + 1}</span>
+                      ) : (
+                        <span className="rank-plain">#{index + 1}</span>
+                      )}
                     </td>
-                    <td className="total-wins">
+                    <td className="player-name" data-label="Player">{player.name}</td>
+                    <td className="university" data-label="University">{player.university || 'N/A'}</td>
+                    <td className="win-rate" data-label="Win Rate">
+                      <span className="stat-value">{winRate}%</span>
+                      <span className="win-rate-track">
+                        <span className="win-rate-fill" style={{ width: `${Math.min(winRate, 100)}%` }} />
+                      </span>
+                    </td>
+                    <td className="total-wins" data-label="Wins">
                       <span className="wins-badge">{player.matches_won}</span>
                     </td>
-                    <td className="matches-played">{player.matches_played}</td>
-                    <td className="rating">
+                    <td className="matches-played" data-label="Played">{player.matches_played}</td>
+                    <td className="rating" data-label="Rating">
                       <span className="rating-value">{player.rating.toFixed(0)}</span>
                     </td>
                   </tr>
@@ -131,23 +203,24 @@ export default function PlayersList() {
       <div className="stats-summary">
         <div className="stat-card">
           <h3>Total Players</h3>
-          <p className="stat-number">{players.length}</p>
+          <p className="stat-number">{playerCount}</p>
         </div>
         <div className="stat-card">
           <h3>Total Matches</h3>
-          <p className="stat-number">
-            {Math.floor(players.reduce((sum, p) => sum + p.matches_played, 0) / 2)}
-          </p>
+          <p className="stat-number">{matchCount}</p>
         </div>
         <div className="stat-card">
           <h3>Top Player</h3>
           <p className="stat-text">
-            {sortedPlayers.length > 0
-              ? `${sortedPlayers[0].name} (${calculateWinRate(sortedPlayers[0])}%)`
-              : 'N/A'}
+            {topPlayer ? `${topPlayer.name} (${calculateWinRate(topPlayer)}%)` : 'N/A'}
           </p>
         </div>
       </div>
     </div>
   );
+}
+
+function SortArrow({ active, dir }) {
+  if (!active) return <span className="sort-arrow idle">↕</span>;
+  return <span className="sort-arrow">{dir === 'asc' ? '↑' : '↓'}</span>;
 }

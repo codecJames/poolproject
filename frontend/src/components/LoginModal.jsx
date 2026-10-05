@@ -1,95 +1,89 @@
 import { useState } from 'react';
-import { login } from '../services/api';
+import { errorMessage, login } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import '../styles/AuthModal.css';
 
-export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
+export default function LoginModal() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login: authLogin } = useAuth();
+  const { authModal, login: startSession, closeAuthModal, openSignup } = useAuth();
   const { addNotification } = useNotification();
+
+  if (authModal !== 'login') return null;
+
+  const reset = () => {
+    setEmail('');
+    setPassword('');
+    setError('');
+  };
+
+  const handleClose = () => {
+    reset();
+    closeAuthModal();
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
+    if (!email.trim() || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      if (!email || !password) {
-        setError('Please fill in all fields');
-        return;
-      }
-      if (!email.includes('@')) {
-        setError('Please enter a valid email');
-        return;
-      }
-      
-      // Call login API
-      const response = await login(email, password);
-      
-      // Update auth context
-      authLogin(response);
-      
+      const response = await login(email.trim(), password);
+      startSession(response);
       addNotification({
         type: 'success',
         title: 'Welcome back!',
-        message: `Successfully logged in as ${response.full_name}`,
+        message: `Logged in as ${response.user.full_name}`,
         duration: 3000,
       });
-      
-      setEmail('');
-      setPassword('');
-      onClose();
-      
+      handleClose();
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'Login failed. Please try again.';
-      setError(errorMessage);
-      addNotification({
-        type: 'error',
-        title: 'Login Failed',
-        message: errorMessage,
-        duration: 5000,
-      });
+      setError(errorMessage(err, 'Login failed. Please try again.'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>✕</button>
-        
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="login-title">
+        <button className="modal-close" onClick={handleClose} aria-label="Close">✕</button>
+
         <div className="modal-header">
-          <h2>Login to UCT Supa Pool</h2>
+          <h2 id="login-title">Log in to UCT Supa Pool</h2>
           <p>Welcome back!</p>
         </div>
 
         <form onSubmit={handleLogin} className="auth-form">
           {error && <div className="error-message">{error}</div>}
-          
+
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="login-email">Email</label>
             <input
-              id="email"
+              id="login-email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               disabled={isLoading}
+              autoFocus
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="login-password">Password</label>
             <input
-              id="password"
+              id="login-password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -98,21 +92,14 @@ export default function LoginModal({ isOpen, onClose, onSwitchToSignup }) {
           </div>
 
           <button type="submit" className="btn-submit" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? 'Logging in...' : 'Log in'}
           </button>
         </form>
 
         <div className="auth-footer">
-          <p>Don't have an account? 
-            <button 
-              className="link-btn" 
-              onClick={() => {
-                setEmail('');
-                setPassword('');
-                setError('');
-                onSwitchToSignup();
-              }}
-            >
+          <p>
+            Don&apos;t have an account?
+            <button className="link-btn" onClick={() => { reset(); openSignup(); }}>
               Sign up
             </button>
           </p>

@@ -1,77 +1,109 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../services/api';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import apiClient, { getMe, setAuthToken } from '../services/api';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const readStored = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
+};
 
-  // Initialize user from localStorage on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error('Failed to parse stored user:', err);
-        localStorage.removeItem('user');
-      }
-    }
-    const token = localStorage.getItem('token');
-    if (token) {
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-    setLoading(false);
+const hasToken = () => {
+  try {
+    return !!localStorage.getItem('token');
+  } catch {
+    return false;
+  }
+};
+
+// Set before any component mounts: child effects run before this provider's,
+// so pages' first requests must already carry the token
+try {
+  setAuthToken(localStorage.getItem('token'));
+} catch {
+  // Storage unavailable; the user simply starts logged out
+}
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(() => (hasToken() ? readStored('user') : null));
+  const [player, setPlayer] = useState(() => (hasToken() ? readStored('player') : null));
+  const [authModal, setAuthModal] = useState(null); // 'login' | 'signup' | null
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setPlayer(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('player');
+    localStorage.removeItem('token');
+    setAuthToken(null);
   }, []);
 
-  const login = (authResponse) => {
-    // authResponse: { token, user }
-    const { token, user } = authResponse;
-    setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
+  // Restore the session, then confirm it is still valid
+  useEffect(() => {
+    if (!hasToken()) return;
+    getMe()
+      .then(({ user: freshUser, player: freshPlayer }) => {
+        setUser(freshUser);
+        setPlayer(freshPlayer);
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        localStorage.setItem('player', JSON.stringify(freshPlayer));
+      })
+      .catch((error) => {
+        if (error.response?.status === 401) logout();
+      });
+  }, [logout]);
+
+  // Any request rejected for an expired session logs the user out
+  useEffect(() => {
+    const interceptor = apiClient.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401 && hasToken()) logout();
+        return Promise.reject(error);
+      }
+    );
+    return () => apiClient.interceptors.response.eject(interceptor);
+  }, [logout]);
+
+  const startSession = useCallback(({ token, user: newUser, player: newPlayer }) => {
+    setUser(newUser);
+    setPlayer(newPlayer);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    localStorage.setItem('player', JSON.stringify(newPlayer));
     localStorage.setItem('token', token);
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setError(null);
-  };
+    setAuthToken(token);
+  }, []);
 
-  const signup = (authResponse) => {
-    const { token, user } = authResponse;
-    setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('token', token);
-    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    setError(null);
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    setError(null);
-  };
-
-  const updateUser = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-  };
+  const refreshPlayer = useCallback(async () => {
+    const { player: freshPlayer } = await getMe();
+    setPlayer(freshPlayer);
+    localStorage.setItem('player', JSON.stringify(freshPlayer));
+    return freshPlayer;
+  }, []);
 
   const value = {
     user,
-    loading,
-    error,
-    login,
-    signup,
-    logout,
-    updateUser,
-    isAuthenticated: !!user,
+    player,
     userId: user?.id,
+    playerId: player?.id,
+    isAuthenticated: !!user,
+    login: startSession,
+    signup: startSession,
+    logout,
+    refreshPlayer,
+    authModal,
+    openLogin: () => setAuthModal('login'),
+    openSignup: () => setAuthModal('signup'),
+    closeAuthModal: () => setAuthModal(null),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
